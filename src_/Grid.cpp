@@ -10,9 +10,6 @@
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Grid::Grid(int columns_,int rows_):columns(columns_+2*HALO),rows(rows_+2*HALO)
 {
-    /*The constructor creates a grid object with dimensions expanded by two cells in each direction to 
-    accommodate a halo region. It initializes a ghost array to store boundary 
-    condition information and allocates memory for the grid data, filling it with zeros.*/
 
     for(int i=0; i<4; ++i){
         ghost[i] = Dirichlet;
@@ -28,9 +25,6 @@ Grid::Grid(int columns_,int rows_):columns(columns_+2*HALO),rows(rows_+2*HALO)
 
 Grid::Grid(int columns_,int rows_, BC_TYPE *ghost_):columns(columns_+2*HALO),rows(rows_+2*HALO)
 {
-    /*The updated constructor now allows the user to specify boundary conditions for the grid when creating 
-    a Grid object. The ghost array is used to store these boundary conditions. The rest of the code remains 
-    the same as before, initializing the grid dimensions and allocating memory for the grid data.*/
     for(int i=0; i<4; ++i){
         ghost[i] = ghost_[i];
     }
@@ -261,11 +255,9 @@ void axpby(Grid *lhs, double a, Grid *x, double b, Grid *y, bool halo)
 #ifdef LIKWID_PERFMON
     LIKWID_MARKER_START("AXPBY");
 #endif
-    /**/
-    #pragma omp parallel for
+
     for(int yIndex=shift; yIndex<lhs->numGrids_y(true)-shift; ++yIndex)
     {
-        // #pragma omp parallel for
         for(int xIndex=shift; xIndex<lhs->numGrids_x(true)-shift; ++xIndex)
         {
             (*lhs)(yIndex,xIndex) = (a*(*x)(yIndex,xIndex)) + (b*(*y)(yIndex,xIndex));
@@ -292,7 +284,7 @@ void copy(Grid *lhs, double a, Grid *rhs, bool halo)
 #ifdef LIKWID_PERFMON
     LIKWID_MARKER_START("COPY");
 #endif
-    #pragma omp parallel for collapse(2)
+
     for(int yIndex=shift; yIndex<lhs->numGrids_y(true)-shift; ++yIndex)
     {
         for(int xIndex=shift; xIndex<lhs->numGrids_x(true)-shift; ++xIndex)
@@ -326,8 +318,6 @@ double dotProduct(Grid *x, Grid *y, bool halo)
 #endif
 
     double dot_res = 0;
-    /*parallize her*/
-    #pragma omp parallel for reduction(+:dot_res)
     for(int yIndex=shift; yIndex<x->numGrids_y(true)-shift; ++yIndex)
     {
         for(int xIndex=shift; xIndex<x->numGrids_x(true)-shift; ++xIndex)

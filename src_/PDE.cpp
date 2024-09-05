@@ -114,11 +114,9 @@ void PDE::applyStencil(Grid* lhs, Grid* x)
 #ifdef LIKWID_PERFMON
     LIKWID_MARKER_START("APPLY_STENCIL");
 #endif
-    /*parallelize here*/
-    #pragma omp parallel for collapse(2)
+
     for ( int j=1; j<ySize-1; ++j)
-    {   
-        // #pragma omp parallel for
+    {
         for ( int i=1; i<xSize-1; ++i)
         {
             (*lhs)(j,i) = w_c*(*x)(j,i) - w_y*((*x)(j+1,i) + (*x)(j-1,i)) - w_x*((*x)(j,i+1) + (*x)(j,i-1));
@@ -153,7 +151,7 @@ void PDE::GSPreCon(Grid* rhs, Grid *x)
 #ifdef LIKWID_PERFMON
     LIKWID_MARKER_START("GS_PRE_CON");
 #endif
-    #pragma omp parallel for collapse(2) private(x,rhs)
+
     //forward substitution
     for ( int j=1; j<ySize-1; ++j)
     {
@@ -163,7 +161,6 @@ void PDE::GSPreCon(Grid* rhs, Grid *x)
         }
     }
     //backward substitution
-    #pragma omp parallel for collapse(2) private(x)
     for ( int j=ySize-2; j>0; --j)
     {
         for ( int i=xSize-2; i>0; --i)
@@ -197,4 +194,3 @@ int PDE::solve(Grid *x, Grid *b, Solver type, int niter, double tol)
         return -1;
     }
 }
-

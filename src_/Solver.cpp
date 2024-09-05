@@ -7,8 +7,6 @@ SolverClass::SolverClass(PDE *pde_, Grid *x_, Grid *b_):pde(pde_),x(x_),b(b_)
 
 int SolverClass::CG(int niter, double tol)
 {
-    //pde->numGrids_x() and pde->numGrids_y() are method calls on the pde object, 
-    // returning the size of the grid in the x and y dimensions respectively.
     Grid *p = new Grid(pde->numGrids_x(), pde->numGrids_y());
     Grid *v = new Grid(pde->numGrids_x(), pde->numGrids_y());
 
@@ -28,28 +26,13 @@ int SolverClass::CG(int niter, double tol)
     START_TIMER(CG);
 
     while( (iter<niter) && (alpha_0>tol*tol) )
-    {   
+    {
         pde->applyStencil(v,p);
         lambda =  alpha_0/dotProduct(v,p);
-        // Update x
+        //Update x
         axpby(x, 1.0, x, lambda, p);
         //Update r
         axpby(r, 1.0, r, -lambda, v);
-
-        // int shift = halo?0:HALO;
-
-        // #pragma omp parallel for
-        // for(int yIndex=shift; yIndex<x->numGrids_y(true)-shift; ++yIndex)
-        // {
-        //     // #pragma omp parallel for
-        //     for(int xIndex=shift; xIndex<x->numGrids_x(true)-shift; ++xIndex)
-        //     {
-        //         (*x)(yIndex,xIndex) = ((*x)(yIndex,xIndex)) + (lambda*(*p)(yIndex,xIndex));
-        //         (*r)(yIndex,xIndex) = ((*r)(yIndex,xIndex)) + (lambda*(*v)(yIndex,xIndex));
-        //     }
-        // }
-
-
         alpha_1 = dotProduct(r,r);
         //Update p
         axpby(p, 1.0, r, alpha_1/alpha_0, p);
