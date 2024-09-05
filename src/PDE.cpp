@@ -115,13 +115,25 @@ void PDE::applyStencil(Grid* lhs, Grid* x)
     LIKWID_MARKER_START("APPLY_STENCIL");
 #endif
     /*parallelize here*/
+    // #pragma omp parallel for collapse(2)
+    // for ( int j=1; j<ySize-1; ++j)
+    // {   
+    //     for ( int i=1; i<xSize-1; ++i)
+    //     {
+    //         (*lhs)(j,i) = w_c*(*x)(j,i) - w_y*((*x)(j+1,i) + (*x)(j-1,i)) - w_x*((*x)(j,i+1) + (*x)(j,i-1));
+    //     }
+    // }
+
+    int blockSizeX = 10000; // Block size for x-dimension
     #pragma omp parallel for collapse(2)
-    for ( int j=1; j<ySize-1; ++j)
-    {   
-        // #pragma omp parallel for
-        for ( int i=1; i<xSize-1; ++i)
-        {
-            (*lhs)(j,i) = w_c*(*x)(j,i) - w_y*((*x)(j+1,i) + (*x)(j-1,i)) - w_x*((*x)(j,i+1) + (*x)(j,i-1));
+    for (int j = 1; j < ySize-1; ++j) {   
+        for (int ii = 1; ii < xSize-1; ii += blockSizeX) {
+            // Operate within the block
+            for (int i = ii; i < std::min(ii + blockSizeX, xSize-1); ++i) {
+                (*lhs)(j,i) = w_c * (*x)(j,i) 
+                            - w_y * ((*x)(j+1,i) + (*x)(j-1,i))
+                            - w_x * ((*x)(j,i+1) + (*x)(j,i-1));
+            }
         }
     }
 

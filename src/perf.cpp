@@ -26,24 +26,24 @@ double rhsSineFunc(int i, int j, double h_x, double h_y)
 
 
 
-// int main(const int argc, char* const argv[])
-int main()
+int main(const int argc, char* const argv[])
+// int main()
 {
-    // if(argc < 3)
-    // {
-    //     printf("Usage: %s <outer dimension y> <inner dimension x>\n", argv[0]);
-    //     return 0;
-    // }
+    if(argc < 3)
+    {
+        printf("Usage: %s <outer dimension y> <inner dimension x>\n", argv[0]);
+        return 0;
+    }
 
 #ifdef LIKWID_PERFMON
     LIKWID_MARKER_INIT;
 #endif
 
 
-    int ny = 3000;
-    int nx = 30000;
-    // int ny = atoi(argv[1]);
-    // int nx = atoi(argv[2]);
+    // int ny = 1000;
+    // int nx = 400000;
+    int ny = atoi(argv[1]);
+    int nx = atoi(argv[2]);
     int numThreads = 1;
 
 #pragma omp parallel
@@ -61,8 +61,8 @@ int main()
     PDE laplace(1,1,nx,ny);
     Grid u_sine(nx,ny);
     Grid rhs_sine(nx,ny);
-    writeGnuplotFile("output.gnuplot",rhs_sine,nx,ny);
-    printf("plotted");
+    // writeGnuplotFile("output.gnuplot",rhs_sine,nx,ny);
+    // printf("plotted");
     laplace.initFunc = uSineFunc;
     laplace.init(&u_sine);
     laplace.initFunc = rhsSineFunc;
