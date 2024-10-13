@@ -25,6 +25,9 @@ CXXFLAGS = $(FLAGS) $(EXTRA_FLAGS) -g
 
 all: clean test perf
 
+# perfkk: perf.o Grid.o PDE.o Solver.o timer.o
+# 	$(CXX) $(CXXFLAGS) -pg -o perfkk Grid.o PDE.o Solver.o perf.o timer.o $(LDFLAGS) $(LIBS) $(LIKWID_LINK_LIB)
+
 perf: perf.o Grid.o PDE.o Solver.o timer.o
 	$(CXX) $(CXXFLAGS) -o perf Grid.o PDE.o Solver.o perf.o timer.o $(LDFLAGS) $(LIBS) $(LIKWID_LINK_LIB)
 

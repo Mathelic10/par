@@ -1,6 +1,7 @@
 #include "PDE.h"
 #include <math.h>
 #include <iostream>
+#include <omp.h>
 #ifdef LIKWID_PERFMON
     #include <likwid.h>
 #endif
@@ -114,19 +115,18 @@ void PDE::applyStencil(Grid* lhs, Grid* x)
 #ifdef LIKWID_PERFMON
     LIKWID_MARKER_START("APPLY_STENCIL");
 #endif
-    /*parallelize here*/
-    // #pragma omp parallel for collapse(2)
-    // for ( int j=1; j<ySize-1; ++j)
-    // {   
-    //     for ( int i=1; i<xSize-1; ++i)
-    //     {
-    //         (*lhs)(j,i) = w_c*(*x)(j,i) - w_y*((*x)(j+1,i) + (*x)(j-1,i)) - w_x*((*x)(j,i+1) + (*x)(j,i-1));
-    //     }
-    // }
 
-    int blockSizeX = 10000; // Block size for x-dimension
-    #pragma omp parallel for collapse(2)
-    for (int j = 1; j < ySize-1; ++j) {   
+    // #pragma omp parallel for collapse(2)
+    //     for ( int j=1; j<ySize-1; ++j)
+    //     {   
+    //         for ( int i=1; i<xSize-1; ++i)
+    //         {
+    //             (*lhs)(j,i) = w_c*(*x)(j,i) - w_y*((*x)(j+1,i) + (*x)(j-1,i)) - w_x*((*x)(j,i+1) + (*x)(j,i-1));
+    //         }
+    //     }
+    int blockSizeX = 62500;
+    #pragma omp parallel for collapse(2) schedule(static)
+    for (int j = 1; j < ySize-1; ++j) {
         for (int ii = 1; ii < xSize-1; ii += blockSizeX) {
             // Operate within the block
             for (int i = ii; i < std::min(ii + blockSizeX, xSize-1); ++i) {
@@ -162,34 +162,58 @@ void PDE::GSPreCon(Grid* rhs, Grid *x)
     const double w_y = 1.0/(h_y*h_y);
     const double w_c = 1.0/static_cast<double>((2.0*w_x + 2.0*w_y));
 
-#ifdef LIKWID_PERFMON
-    LIKWID_MARKER_START("GS_PRE_CON");
-#endif
-    #pragma omp parallel for collapse(2) private(x,rhs)
-    //forward substitution
-    for ( int j=1; j<ySize-1; ++j)
+    int n,t,jj,j,i;
+    #pragma omp parallel private(n,t,jj,j,i)
     {
-        for ( int i=1; i<xSize-1; ++i)
+
+    #ifdef LIKWID_PERFMON
+        LIKWID_MARKER_START("GS_PRE_CON");
+    #endif
+        n=omp_get_num_threads();
+        t=omp_get_thread_num();
+
+        int interval = (xSize-2)/n;
+        int ifs = interval*t+1;
+
+        int ife = (t==(n-1))?(xSize-2):(ifs+interval-1);
+
+        //forward substitution
+        for ( j=1; j<ySize-1+n-1; ++j)
         {
-            (*x)(j,i) = w_c*((*rhs)(j,i) + (w_y*(*x)(j-1,i) + w_x*(*x)(j,i-1)));
+            jj = j - t;
+            if(jj>=1 && jj<ySize-1)
+            {   
+                // #pragma omp for
+                for ( i=ifs; i<=ife; ++i)
+                {
+                    (*x)(jj,i) = w_c*((*rhs)(jj,i) + (w_y*(*x)(jj-1,i) + w_x*(*x)(jj,i-1)));
+                }
+            }
+            #pragma omp barrier
         }
-    }
-    //backward substitution
-    #pragma omp parallel for collapse(2) private(x)
-    for ( int j=ySize-2; j>0; --j)
-    {
-        for ( int i=xSize-2; i>0; --i)
+
+    
+
+        //backward substitution
+        for ( j=ySize-2+n-1; j>0; --j)
         {
-            (*x)(j,i) = (*x)(j,i) + w_c*(w_y*(*x)(j+1,i) + w_x*(*x)(j,i+1));
+            jj = j - t;
+            if(jj<ySize-1 && jj>=1){
+                // #pragma omp for
+                for ( i=ife; i>=ifs; --i)
+                {
+                    (*x)(jj,i) = (*x)(jj,i) + w_c*(w_y*(*x)(jj+1,i) + w_x*(*x)(jj,i+1));
+                }
+            }
+            #pragma omp barrier
         }
-    }
 
-#ifdef LIKWID_PERFMON
-    LIKWID_MARKER_STOP("GS_PRE_CON");
-#endif
-
-
+    #ifdef LIKWID_PERFMON
+        LIKWID_MARKER_STOP("GS_PRE_CON");
+    #endif
+   }
     STOP_TIMER(GS_PRE_CON);
+
 }
 
 int PDE::solve(Grid *x, Grid *b, Solver type, int niter, double tol)

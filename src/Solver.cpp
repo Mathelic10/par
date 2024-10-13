@@ -29,28 +29,14 @@ int SolverClass::CG(int niter, double tol)
 
     while( (iter<niter) && (alpha_0>tol*tol) )
     {   
-        pde->applyStencil(v,p);
+        pde->applyStencil(v,p); 
         lambda =  alpha_0/dotProduct(v,p);
         // Update x
-        axpby(x, 1.0, x, lambda, p);
+        axpby(x, 1.0, x, lambda, p); 
         //Update r
-        axpby(r, 1.0, r, -lambda, v);
+        axpby(r, 1.0, r, -lambda, v); 
 
-        // int shift = halo?0:HALO;
-
-        // #pragma omp parallel for
-        // for(int yIndex=shift; yIndex<x->numGrids_y(true)-shift; ++yIndex)
-        // {
-        //     // #pragma omp parallel for
-        //     for(int xIndex=shift; xIndex<x->numGrids_x(true)-shift; ++xIndex)
-        //     {
-        //         (*x)(yIndex,xIndex) = ((*x)(yIndex,xIndex)) + (lambda*(*p)(yIndex,xIndex));
-        //         (*r)(yIndex,xIndex) = ((*r)(yIndex,xIndex)) + (lambda*(*v)(yIndex,xIndex));
-        //     }
-        // }
-
-
-        alpha_1 = dotProduct(r,r);
+        alpha_1 = dotProduct(r,r); 
         //Update p
         axpby(p, 1.0, r, alpha_1/alpha_0, p);
         alpha_0 = alpha_1;
@@ -92,16 +78,16 @@ int SolverClass::PCG(int niter, double tol)
 
     while( (iter<niter) && (res_norm_sq>tol*tol) )
     {
-        pde->applyStencil(v,p);
-        lambda =  alpha_0/dotProduct(v,p);
+        pde->applyStencil(v,p); 
+        lambda =  alpha_0/dotProduct(v,p); 
         //Update x
-        axpby(x, 1.0, x, lambda, p);
+        axpby(x, 1.0, x, lambda, p); 
         //Update r
-        axpby(r, 1.0, r, -lambda, v);
-        res_norm_sq = dotProduct(r,r);
+        axpby(r, 1.0, r, -lambda, v); 
+        res_norm_sq = dotProduct(r,r); 
         //Update z
-        pde->GSPreCon(r, z);
-        alpha_1 = dotProduct(r,z);
+        pde->GSPreCon(r, z); 
+        alpha_1 = dotProduct(r,z); 
         //Update p
         axpby(p, 1.0, z, alpha_1/alpha_0, p);
         alpha_0 = alpha_1;

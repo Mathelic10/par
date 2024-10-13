@@ -68,7 +68,7 @@ int main(const int argc, char* const argv[])
     laplace.initFunc = rhsSineFunc;
     laplace.init(&rhs_sine);
     Grid residual(nx,ny);
-
+    //writeGnuplotFile("output1.gnuplot",rhs_sine,nx,ny);
     //Now check CG solver with fixed iteration number
     Grid x(nx,ny);
     x.rand();//fill(0);//rand();
@@ -95,6 +95,7 @@ int main(const int argc, char* const argv[])
 
     //Now check PCG solver with fixed iteration number
     x.rand();//fill(0);//rand();
+    //writeGnuplotFile("output2.gnuplot",rhs_sine,nx,ny);
     int iter_sine_pcg = laplace.solve(&x, &rhs_sine, PCG, 20);
     printf("PCG iterations = %d\n", iter_sine_pcg);
     double pcg_time = 0;
@@ -112,7 +113,7 @@ int main(const int argc, char* const argv[])
 #endif
 
     TESTS_END;
-
+    
     PRINT_TIME_SUMMARY;
 
 #ifdef LIKWID_PERFMON
